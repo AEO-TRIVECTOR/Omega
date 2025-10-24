@@ -1,9 +1,19 @@
 # Trivector.AI
 
-A Next.js-powered web application featuring advanced data visualization, 3D graphics, and machine learning capabilities.
+A Next.js-powered web application featuring advanced data visualization, 3D graphics, machine learning capabilities, and an interactive tri-logic Riemann sphere visualizer.
+
+## 🌐 Live Demo
+
+**Production**: https://omega-plum-mu.vercel.app
+**Tri-Logic Visualizer**: https://omega-plum-mu.vercel.app/trilogic
 
 ## Features
 
+- **Tri-Logic Visualizer**: Interactive 3D visualization of three-valued logic on the Riemann sphere
+  - Maps truth values {0, 1, ∅} to sphere geometry
+  - Stereographic projection visualization
+  - Interactive Möbius transformations (Identity, Inversion, Rotation, Scaling)
+  - Real-time 3D manipulation with orbit controls
 - **Modern Stack**: Built with Next.js 14, React 18, and TypeScript
 - **Data Visualization**: D3.js for powerful data visualizations
 - **3D Graphics**: Three.js with React Three Fiber for immersive 3D experiences
@@ -56,15 +66,21 @@ trivector-ai/
 │   ├── app/              # Next.js app directory
 │   │   ├── page.tsx      # Homepage
 │   │   ├── layout.tsx    # Root layout
-│   │   └── globals.css   # Global styles
+│   │   ├── globals.css   # Global styles
+│   │   └── trilogic/     # Tri-logic visualizer route
+│   │       └── page.tsx  # Visualizer page
+│   ├── components/       # React components
+│   │   └── RiemannSphere.tsx  # 3D visualization component
 │   └── lib/              # Utility functions and configurations
-│       └── env.ts        # Environment variable validation
+│       ├── env.ts        # Environment variable validation
+│       └── trilogic.ts   # Tri-logic math and transformations
 ├── public/               # Static assets
 ├── .github/              # GitHub Actions workflows
 ├── .env.example          # Environment variables template
 ├── vercel.json           # Vercel deployment configuration
 ├── Dockerfile            # Docker configuration
 ├── docker-compose.yml    # Docker Compose setup
+├── DEPLOYMENT.md         # Deployment documentation
 └── package.json          # Dependencies and scripts
 ```
 
