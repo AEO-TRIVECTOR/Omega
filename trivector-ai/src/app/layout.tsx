@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Trivector.AI",
-  description: "Advanced data visualization, 3D graphics, and machine learning",
+  description: "Quantum-native intelligence with tri-logic visualization, Riemann sphere mapping, and Möbius transformations",
 };
 
 export default function RootLayout({
