@@ -110,6 +110,7 @@ const navLinks = [
   { name: 'home', label: 'Home', route: '/' },
   { name: 'about', label: 'About', route: '/about' },
   { name: 'research', label: 'Research', route: '/research' },
+  { name: 'riemann-sphere', label: 'Riemann Sphere', route: '/riemann-sphere' },
   { name: 'services', label: 'Services', route: '/services' }
 ]
 </script>

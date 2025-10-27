@@ -7,7 +7,8 @@ const routes = [
       { path: 'about', name: 'about', component: () => import('pages/AboutPage.vue') },
       { path: 'research', name: 'research', component: () => import('pages/ResearchPage.vue') },
       { path: 'services', name: 'services', component: () => import('pages/ServicesPage.vue') },
-      { path: 'contact', name: 'contact', component: () => import('pages/ContactPage.vue') }
+      { path: 'contact', name: 'contact', component: () => import('pages/ContactPage.vue') },
+      { path: 'riemann-sphere', name: 'riemann-sphere', component: () => import('pages/RiemannSpherePage.vue') }
     ]
   },
 
