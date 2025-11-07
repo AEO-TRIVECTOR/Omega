@@ -77,6 +77,12 @@ export default function Landing() {
             <p className="text-sm text-gray-400">ML‑KEM secure channels and integrity proofs for every response.</p>
           </div>
         </div>
+        <div className="mt-8 text-center">
+          <Link href="/trilogic" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-brand via-brand-purple to-brand-pink text-white font-semibold hover:opacity-90 transition-opacity">
+            <span>🎯 Explore Tri-Logic Visualizer</span>
+            <span className="text-sm opacity-80">Interactive Riemann Sphere</span>
+          </Link>
+        </div>
       </section>
 
       {/* Principles */}
