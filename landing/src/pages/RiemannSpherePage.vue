@@ -76,7 +76,7 @@
                     size="lg"
                     class="cta-btn primary-cta"
                     label="Launch Riemann Sphere Visualizer"
-                    href="https://omega-main.vercel.app/trilogic"
+                    href="/trilogic"
                     target="_blank"
                     icon-right="open_in_new"
                   />
