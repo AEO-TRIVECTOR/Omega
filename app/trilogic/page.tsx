@@ -10,6 +10,7 @@
 import React, { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { MobiusParams } from './lib/math';
 import ControlPanel from './components/ControlPanel';
 import TruthTable from './components/TruthTable';
@@ -56,6 +57,16 @@ export default function TriLogicPage() {
       {/* Header */}
       <header className="border-b border-purple-500/20 backdrop-blur-sm bg-black/30">
         <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="text-sm text-gray-400 hover:text-cyan-400 transition-colors flex items-center gap-2">
+              <span>←</span>
+              <span>Back to Home</span>
+            </Link>
+            <div className="flex gap-3 text-sm">
+              <Link href="/console" className="text-gray-400 hover:text-purple-400 transition-colors">Console</Link>
+              <Link href="/docs" className="text-gray-400 hover:text-pink-400 transition-colors">Docs</Link>
+            </div>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
