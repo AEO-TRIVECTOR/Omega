@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useParameters, PARAM_RANGES } from '../context/ParameterContext';
+import { getSoundEngine } from '../../lib/audio/sound-engine';
 
 export default function MasterControls() {
   const { params, setMu, setOmega, setKappa, resetToCanonical, isCanonical } = useParameters();
@@ -13,7 +14,10 @@ export default function MasterControls() {
           Master Parameters
         </h3>
         <button
-          onClick={resetToCanonical}
+          onClick={() => {
+            resetToCanonical();
+            getSoundEngine().playClick();
+          }}
           disabled={isCanonical}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             isCanonical
@@ -43,7 +47,11 @@ export default function MasterControls() {
             max={PARAM_RANGES.mu.max}
             step={PARAM_RANGES.mu.step}
             value={params.mu}
-            onChange={(e) => setMu(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              setMu(value);
+              getSoundEngine().playParameterSweep(value, PARAM_RANGES.mu.min, PARAM_RANGES.mu.max);
+            }}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-cyan"
           />
           <div className="flex justify-between text-xs text-gray-500">
@@ -70,7 +78,11 @@ export default function MasterControls() {
             max={PARAM_RANGES.omega.max}
             step={PARAM_RANGES.omega.step}
             value={params.omega}
-            onChange={(e) => setOmega(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              setOmega(value);
+              getSoundEngine().playParameterSweep(value, PARAM_RANGES.omega.min, PARAM_RANGES.omega.max);
+            }}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-purple"
           />
           <div className="flex justify-between text-xs text-gray-500">
@@ -97,7 +109,11 @@ export default function MasterControls() {
             max={PARAM_RANGES.kappa.max}
             step={PARAM_RANGES.kappa.step}
             value={params.kappa}
-            onChange={(e) => setKappa(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              setKappa(value);
+              getSoundEngine().playParameterSweep(value, PARAM_RANGES.kappa.min, PARAM_RANGES.kappa.max);
+            }}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-pink"
           />
           <div className="flex justify-between text-xs text-gray-500">

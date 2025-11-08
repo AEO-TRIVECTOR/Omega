@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { SpectralVisualization } from './components/SpectralVisualization';
 import { SpectralControls } from './components/SpectralControls';
 import { DistanceMatrix } from './components/DistanceMatrix';
+import { AudioControls } from '../components/AudioControls';
 import { computeSpectralTriple, PRESET_MODELS, SpectralTripleResult } from './lib/spectral-triple';
+import { getSoundEngine } from '../lib/audio/sound-engine';
 
 export default function SpectralPage() {
   const [result, setResult] = useState<SpectralTripleResult | null>(null);
@@ -41,12 +43,25 @@ export default function SpectralPage() {
   const handleNodeSelect = (index: number) => {
     setSelectedNode(index);
     setGeodesicPair(null);
+    
+    // Play sound for node selection
+    const soundEngine = getSoundEngine();
+    if (result) {
+      soundEngine.playStateTransition(selectedNode ?? 0, index, result.metadata.dimension);
+    }
   };
 
   const handleCellClick = (i: number, j: number) => {
     if (i !== j) {
       setGeodesicPair({ from: i, to: j });
       setSelectedNode(null);
+      
+      // Play sound for distance
+      const soundEngine = getSoundEngine();
+      if (result) {
+        const distance = result.distances[i][j];
+        soundEngine.playConnesDistance(distance, result.metadata.maxDistance);
+      }
     }
   };
 
@@ -68,12 +83,16 @@ export default function SpectralPage() {
               </h1>
             </div>
 
-            <button
-              onClick={() => setShowMath(!showMath)}
-              className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 rounded-lg text-purple-300 text-sm transition-colors"
-            >
-              {showMath ? '📖 Hide Math' : '🔬 Show Math'}
-            </button>
+            <div className="flex items-center gap-4">
+              <AudioControls />
+              
+              <button
+                onClick={() => setShowMath(!showMath)}
+                className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 rounded-lg text-purple-300 text-sm transition-colors"
+              >
+                {showMath ? '📖 Hide Math' : '🔬 Show Math'}
+              </button>
+            </div>
           </div>
         </div>
       </header>

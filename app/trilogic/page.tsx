@@ -30,6 +30,7 @@ import ParallaxBackground from './components/ParallaxBackground';
 import OmegaPulse from './components/OmegaPulse';
 import PageTransitions, { TabTransition } from './components/PageTransitions';
 import LazyVisualization from './components/LazyVisualization';
+import { AudioControls } from '../components/AudioControls';
 
 // Existing Components
 import ControlPanel from './components/ControlPanel';
@@ -121,6 +122,7 @@ function TriLogicContent() {
                 <div className="inline-block px-3 py-1 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-full border border-purple-500/30">
                   <span className="text-xs text-purple-300">✨ Enhanced Interactive Edition</span>
                 </div>
+                <AudioControls />
                 <DisclosureControls />
               </div>
             </PageTransitions>
