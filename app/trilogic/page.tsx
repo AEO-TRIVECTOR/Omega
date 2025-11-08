@@ -24,6 +24,12 @@ import EducationalInfo from './components/EducationalInfo';
 import CodeExporter from './components/CodeExporter';
 import CollapseAnimation from './components/CollapseAnimation';
 import SphereControls from './components/SphereControls';
+import UndefinedPropagation from './components/UndefinedPropagation';
+import WabiSabiSpace from './components/WabiSabiSpace';
+import SpectralDistance from './components/SpectralDistance';
+import TensorTriad from './components/TensorTriad';
+import CollapseCycles from './components/CollapseCycles';
+import SheafCoherence from './components/SheafCoherence';
 
 // Dynamically import RiemannSphereEnhanced to avoid SSR issues with Three.js
 const RiemannSphereEnhanced = dynamic(() => import('./components/RiemannSphereEnhanced'), {
@@ -36,6 +42,7 @@ const RiemannSphereEnhanced = dynamic(() => import('./components/RiemannSphereEn
 });
 
 export default function TriLogicPageEnhanced() {
+  const [activeTab, setActiveTab] = useState<string>('sphere');
   const [transformation, setTransformation] = useState<MobiusParams | null>(null);
   const [showProjectionLines, setShowProjectionLines] = useState(true);
   const [showSpiral, setShowSpiral] = useState(false);
@@ -160,6 +167,33 @@ export default function TriLogicPageEnhanced() {
           </div>
         </motion.section>
 
+        {/* Tab Navigation */}
+        <div className="mb-8 flex flex-wrap gap-2 justify-center">
+          {[
+            { id: 'sphere', label: '🌐 Riemann Sphere' },
+            { id: 'propagation', label: '🦠 Undefined Propagation' },
+            { id: 'wabisabi', label: '🌸 Wabi-Sabi Space' },
+            { id: 'spectral', label: '📏 Spectral Distance' },
+            { id: 'tensor', label: '⚛️ Tensor Triad' },
+            { id: 'collapse', label: '🔄 Collapse Cycles' },
+            { id: 'sheaf', label: '🔗 Sheaf Coherence' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-lg transition-all text-sm font-medium ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Conditional Content Based on Active Tab */}
+        {activeTab === 'sphere' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - 3D Visualization */}
           <motion.div
@@ -239,9 +273,18 @@ export default function TriLogicPageEnhanced() {
             
             {/* Code Exporter */}
             <CodeExporter />
-          </motion.div>
+                 </motion.div>
         </div>
-        
+        )}
+
+        {/* Phase 2 Features */}
+        {activeTab === 'propagation' && <UndefinedPropagation />}
+        {activeTab === 'wabisabi' && <WabiSabiSpace />}
+        {activeTab === 'spectral' && <SpectralDistance />}
+        {activeTab === 'tensor' && <TensorTriad />}
+        {activeTab === 'collapse' && <CollapseCycles />}
+        {activeTab === 'sheaf' && <SheafCoherence />}
+
         {/* Footer Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
