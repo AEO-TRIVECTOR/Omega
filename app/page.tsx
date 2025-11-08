@@ -62,12 +62,18 @@ export default function Landing() {
                 <span className="font-mono font-semibold text-pink-400">{"{ 0, 1, ∅ }"}</span>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col items-center gap-2">
               <a 
                 href="/trilogic" 
                 className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors underline decoration-cyan-400/30 hover:decoration-cyan-300"
               >
                 → Explore interactive tri-logic visualizer
+              </a>
+              <a 
+                href="/spectral" 
+                className="text-sm text-purple-400 hover:text-purple-300 transition-colors underline decoration-purple-400/30 hover:decoration-purple-300"
+              >
+                → Explore spectral triple geometry
               </a>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -109,10 +115,14 @@ export default function Landing() {
             </a>
           </div>
         </div>
-        <div className="mt-8 text-center">
-          <Link href="/trilogic" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-brand via-brand-purple to-brand-pink text-white font-semibold hover:opacity-90 transition-opacity">
-            <span>🎯 Explore Tri-Logic Visualizer</span>
-            <span className="text-sm opacity-80">Interactive Riemann Sphere</span>
+        <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4">
+          <Link href="/trilogic" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90 transition-opacity">
+            <span>🎯 Tri-Logic Visualizer</span>
+            <span className="text-sm opacity-80">Riemann Sphere</span>
+          </Link>
+          <Link href="/spectral" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-500 via-cyan-500 to-pink-500 text-white font-semibold hover:opacity-90 transition-opacity">
+            <span>🌌 Spectral Geometry</span>
+            <span className="text-sm opacity-80">Connes Distance</span>
           </Link>
         </div>
       </section>
