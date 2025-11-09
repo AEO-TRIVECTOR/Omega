@@ -17,8 +17,10 @@ export interface SpectralTripleResult {
 let wasmReady: Promise<any> | null = null;
 async function initWasm() {
   if (!wasmReady) {
+    // Use webpackIgnore to prevent webpack from trying to bundle this at build time
+    // The WASM module will be loaded at runtime from the public folder
     // @ts-ignore
-    wasmReady = import('/wasm/connes_distance_wasm.js').then(m => m.default().then(() => m));
+    wasmReady = import(/* webpackIgnore: true */ '/wasm/connes_distance_wasm.js').then(m => m.default().then(() => m));
   }
   return wasmReady;
 }
@@ -52,8 +54,9 @@ export function useSpectralTriple(P: number[][], epsilon = 0.001) {
 
 // Expose module for validation helper
 export async function getWasmModule(): Promise<any> {
+  // Use webpackIgnore to prevent webpack from trying to bundle this at build time
   // @ts-ignore
-  const mod = await import('/wasm/connes_distance_wasm.js').then(m => m.default().then(() => m));
+  const mod = await import(/* webpackIgnore: true */ '/wasm/connes_distance_wasm.js').then(m => m.default().then(() => m));
   return mod;
 }
 

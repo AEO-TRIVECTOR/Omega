@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getWasmModule } from '@/hooks/useSpectralTriple';
+import { getWasmModule } from '@/app/lib/useSpectralTriple';
 
 type Result = {
   passed: boolean;
