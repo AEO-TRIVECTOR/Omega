@@ -24,7 +24,13 @@ const CollaborationContext = createContext<CollaborationContextType | undefined>
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
 export function CollaborationProvider({ children }: { children: ReactNode }) {
-  const searchParams = useSearchParams();
+  // Make searchParams optional to avoid Suspense boundary requirement
+  let searchParams = null;
+  try {
+    searchParams = useSearchParams();
+  } catch (e) {
+    // SSR or missing Suspense boundary - searchParams will be null
+  }
   const { params, setMu, setOmega, setKappa } = useParameters();
   const { user, token, loginAnonymous, isAuthenticated } = useAuth();
   
