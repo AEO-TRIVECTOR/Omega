@@ -75,6 +75,12 @@ export default function Landing() {
               >
                 → Explore spectral triple geometry
               </a>
+              <a 
+                href="/spectral-wasm" 
+                className="text-sm text-pink-400 hover:text-pink-300 transition-colors underline decoration-pink-400/30 hover:decoration-pink-300"
+              >
+                → Explore spectral geometry (Rust/WASM + 3D)
+              </a>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="#cta" className="btn-primary">Get Started</Link>

@@ -35,3 +35,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+connes_distance/target/\nconnes_distance_wasm/target/\nconnes_distance/Cargo.lock\nconnes_distance_wasm/Cargo.lock
