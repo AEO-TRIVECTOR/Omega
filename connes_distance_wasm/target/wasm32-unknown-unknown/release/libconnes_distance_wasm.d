@@ -1,0 +1,1 @@
+/home/user/Omega/connes_distance_wasm/target/wasm32-unknown-unknown/release/libconnes_distance_wasm.rlib: /home/user/Omega/connes_distance/src/lib.rs /home/user/Omega/connes_distance/src/spectral.rs /home/user/Omega/connes_distance_wasm/src/lib.rs
