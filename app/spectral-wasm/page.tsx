@@ -67,7 +67,15 @@ export default function SpectralWASMPage() {
     <div className="min-h-screen bg-gradient-to-br from-neutral-950 via-purple-950/20 to-neutral-950 text-white p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold">Spectral Triple Geometry (Rust/WASM)</h1>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-4 mb-2">
+                <a href="/" className="text-gray-400 hover:text-white transition-colors text-sm">← Back</a>
+                <a href="mailto:link@trivector.ai" className="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Contact</a>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold">Spectral Triple Geometry (Rust/WASM)</h1>
+            </div>
+          </div>
           <p className="text-neutral-400">
             Connes distance via Rust + WebAssembly; 2D heatmap and 3D MDS embedding.
           </p>

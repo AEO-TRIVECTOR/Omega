@@ -90,6 +90,7 @@ export default function SpectralPage() {
             </div>
 
             <div className="flex items-center gap-4">
+              <a href="mailto:link@trivector.ai" className="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Contact</a>
               <AudioControls />
               
               <button

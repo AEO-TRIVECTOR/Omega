@@ -225,43 +225,31 @@ function symmetrizeGenerator(L: Matrix, pi: number[]): Matrix {
 }
 
 /**
- * Simplified eigendecomposition for symmetric matrix
- * Returns eigenvalues (sorted descending by magnitude)
+ * Symmetric eigendecomposition using Jacobi algorithm
+ * Returns eigenvalues (sorted descending) and eigenvectors
  */
 function eigendecompose(A: Matrix): { values: number[]; vectors: Matrix } {
   const n = A.rows;
   
-  // For small matrices, use power iteration for dominant eigenvalue
-  // and deflation for others (simplified approach)
-  const eigenvalues: number[] = [];
-  const eigenvectors: number[][] = [];
-
-  // Get dominant eigenvalue
+  // Import Jacobi solver
+  const { symmetricEigenJacobi } = require('./eigen');
+  
   try {
-    const { value, vector } = A.powerIteration();
-    eigenvalues.push(value);
-    eigenvectors.push(vector);
+    // Use proper Jacobi eigendecomposition
+    const { values, vectors } = symmetricEigenJacobi(A.data);
+    
+    return {
+      values,
+      vectors: Matrix.from2D(vectors)
+    };
   } catch (e) {
+    console.error('Eigendecomposition failed:', e);
     // Fallback: return zeros
     return {
       values: Array(n).fill(0),
       vectors: Matrix.identity(n)
     };
   }
-
-  // For remaining eigenvalues, use simplified estimation
-  // (In production, use proper symmetric eigendecomposition library)
-  for (let i = 1; i < n; i++) {
-    eigenvalues.push(eigenvalues[0] * (n - i) / n); // Rough approximation
-    const vec = Array(n).fill(0);
-    vec[i] = 1;
-    eigenvectors.push(vec);
-  }
-
-  return {
-    values: eigenvalues,
-    vectors: Matrix.from2D(eigenvectors.map(v => v))
-  };
 }
 
 /**

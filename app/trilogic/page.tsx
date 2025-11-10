@@ -116,6 +116,7 @@ function TriLogicContent() {
               <div className="flex gap-3 text-sm">
                 <Link href="/console" className="text-gray-400 hover:text-purple-400 transition-colors">Console</Link>
                 <Link href="/docs" className="text-gray-400 hover:text-pink-400 transition-colors">Docs</Link>
+                <a href="mailto:link@trivector.ai" className="text-gray-400 hover:text-cyan-400 transition-colors">Contact</a>
               </div>
             </div>
             <PageTransitions>
