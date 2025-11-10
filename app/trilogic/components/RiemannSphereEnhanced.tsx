@@ -266,8 +266,6 @@ interface ProjectionLinesProps {
 }
 
 function ProjectionLines({ show, transformation }: ProjectionLinesProps) {
-  if (!show) return null;
-
   const lines = useMemo(() => {
     const northPole = new Vector3(0, 1, 0);
     const projectionLines: { points: Vector3[]; color: string }[] = [];
@@ -292,6 +290,8 @@ function ProjectionLines({ show, transformation }: ProjectionLinesProps) {
 
     return projectionLines;
   }, [transformation]);
+
+  if (!show) return null;
 
   return (
     <>
@@ -354,8 +354,6 @@ function EquilibriumSpiral({ show }: EquilibriumSpiralProps) {
     return { points: spiralPoints, colors: spiralColors };
   }, []);
 
-  if (!show) return null;
-
   const geometry = useMemo(() => {
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [p.x, p.y, p.z]), 3));
@@ -366,6 +364,8 @@ function EquilibriumSpiral({ show }: EquilibriumSpiralProps) {
   const material = useMemo(() => {
     return new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.8 });
   }, []);
+
+  if (!show) return null;
 
   return (
     <primitive object={new THREE.Line(geometry, material)} ref={spiralRef} />

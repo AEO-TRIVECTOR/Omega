@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { useWebSocket } from '../../lib/websocket/useWebSocket';
 import { useParameters } from './ParameterContext';
 import { useAuth } from '../../lib/auth/useAuth';
@@ -23,18 +22,20 @@ const CollaborationContext = createContext<CollaborationContextType | undefined>
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
-export function CollaborationProvider({ children }: { children: ReactNode }) {
-  // Make searchParams optional to avoid Suspense boundary requirement
-  let searchParams = null;
-  try {
-    searchParams = useSearchParams();
-  } catch (e) {
-    // SSR or missing Suspense boundary - searchParams will be null
+const getSessionFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
   }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get('session');
+};
+
+export function CollaborationProvider({ children }: { children: ReactNode }) {
   const { params, setMu, setOmega, setKappa } = useParameters();
   const { user, token, loginAnonymous, isAuthenticated } = useAuth();
   
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => getSessionFromUrl());
   const [currentConflict, setCurrentConflict] = useState<Conflict | null>(null);
   const [isUpdatingFromRemote, setIsUpdatingFromRemote] = useState(false);
   
@@ -45,13 +46,22 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, loginAnonymous]);
 
-  // Check for session ID in URL on mount
+  // Sync session ID from URL on mount and navigation changes
   useEffect(() => {
-    const urlSessionId = searchParams?.get('session');
-    if (urlSessionId) {
-      setSessionId(urlSessionId);
+    if (typeof window === 'undefined') {
+      return;
     }
-  }, [searchParams]);
+
+    const handlePopstate = () => {
+      setSessionId(getSessionFromUrl());
+    };
+
+    // Ensure initial state is synced with URL after hydration
+    setSessionId(getSessionFromUrl());
+
+    window.addEventListener('popstate', handlePopstate);
+    return () => window.removeEventListener('popstate', handlePopstate);
+  }, []);
 
   // WebSocket connection (only if authenticated)
   const ws = useWebSocket({
@@ -96,14 +106,23 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     autoReconnect: true
   });
 
+  const {
+    connected: wsConnected,
+    authenticated: wsAuthenticated,
+    users: wsUsers,
+    sendParamUpdate,
+    resolveConflict: sendResolveConflict,
+    disconnect: disconnectFromSession
+  } = ws;
+
   // Send parameter updates to other users (debounced)
   useEffect(() => {
-    if (!sessionId || !ws.connected || isUpdatingFromRemote) {
+    if (!sessionId || !wsConnected || isUpdatingFromRemote) {
       return; // Don't send if not in session, not connected, or updating from remote
     }
 
     const timeoutId = setTimeout(() => {
-      ws.sendParamUpdate({
+      sendParamUpdate({
         mu: params.mu,
         omega: params.omega,
         kappa: params.kappa
@@ -111,7 +130,7 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [params.mu, params.omega, params.kappa, sessionId, ws.connected, isUpdatingFromRemote]);
+  }, [params.mu, params.omega, params.kappa, sessionId, wsConnected, isUpdatingFromRemote, sendParamUpdate]);
 
   const createSession = useCallback(() => {
     // Generate random session ID
@@ -135,13 +154,13 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
 
   const leaveSession = useCallback(() => {
     setSessionId(null);
-    ws.disconnect();
+    disconnectFromSession();
     
     // Remove session from URL
     const url = new URL(window.location.href);
     url.searchParams.delete('session');
     window.history.pushState({}, '', url);
-  }, [ws]);
+  }, [disconnectFromSession]);
 
   const resolveConflict = useCallback((param: string, value: number, strategy: string) => {
     console.log('[Collab] Resolving conflict:', { param, value, strategy });
@@ -152,29 +171,29 @@ export function CollaborationProvider({ children }: { children: ReactNode }) {
     else if (param === 'kappa') setKappa(value);
     
     // Send resolution to server
-    ws.resolveConflict(param, value, strategy);
+    sendResolveConflict(param, value, strategy);
     
     // Clear conflict
     setCurrentConflict(null);
-  }, [ws, setMu, setOmega, setKappa]);
+  }, [sendResolveConflict, setMu, setOmega, setKappa]);
 
   const dismissConflict = useCallback(() => {
     setCurrentConflict(null);
   }, []);
 
   return (
-    <CollaborationContext.Provider
-      value={{
-        sessionId,
-        connected: ws.connected && ws.authenticated,
-        users: ws.users,
-        currentConflict,
-        createSession,
-        joinSession,
-        leaveSession,
-        resolveConflict,
-        dismissConflict
-      }}
+      <CollaborationContext.Provider
+        value={{
+          sessionId,
+          connected: wsConnected && wsAuthenticated,
+          users: wsUsers,
+          currentConflict,
+          createSession,
+          joinSession,
+          leaveSession,
+          resolveConflict,
+          dismissConflict
+        }}
     >
       {children}
     </CollaborationContext.Provider>

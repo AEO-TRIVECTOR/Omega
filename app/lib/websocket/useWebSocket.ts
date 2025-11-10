@@ -294,7 +294,7 @@ export function useWebSocket(config: WebSocketConfig) {
       console.error('[WS] Failed to create WebSocket:', error);
       setState(prev => ({ ...prev, error: 'Failed to connect' }));
     }
-  }, [url, sessionId, userId, userName, userColor, autoReconnect, handleMessage, stopHeartbeat]);
+    }, [url, sessionId, userId, userName, userColor, token, autoReconnect, handleMessage, stopHeartbeat]);
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {
@@ -329,7 +329,7 @@ export function useWebSocket(config: WebSocketConfig) {
     return () => {
       disconnect();
     };
-  }, [sessionId]); // Only reconnect if sessionId changes
+  }, [connect, disconnect]);
 
   return {
     ...state,

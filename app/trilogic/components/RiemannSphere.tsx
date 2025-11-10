@@ -127,8 +127,6 @@ function TruthValueMarkers({ transformation }: { transformation?: MobiusParams |
  * Stereographic projection lines
  */
 function ProjectionLines({ show }: { show: boolean }) {
-  if (!show) return null;
-  
   const lines = useMemo(() => {
     // Lines from north pole to truth values
     return [
@@ -144,6 +142,8 @@ function ProjectionLines({ show }: { show: boolean }) {
       }
     ];
   }, []);
+  
+  if (!show) return null;
   
   return (
     <>
