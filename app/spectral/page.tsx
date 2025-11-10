@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SpectralVisualization } from './components/SpectralVisualization';
 import { SpectralControls } from './components/SpectralControls';
 import { DistanceMatrix } from './components/DistanceMatrix';
@@ -17,12 +17,7 @@ export default function SpectralPage() {
   const [showMath, setShowMath] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('ADDENDUM_B');
 
-  // Compute spectral triple on mount and when model changes
-  useEffect(() => {
-    computeModel(transitionMatrix, PRESET_MODELS.ADDENDUM_B.epsilon);
-  }, []);
-
-  const computeModel = async (matrix: number[][], epsilon: number, presetKey?: string) => {
+  const computeModel = useCallback(async (matrix: number[][], epsilon: number, presetKey?: string) => {
     setIsComputing(true);
     
     // Update selected preset if provided
@@ -44,7 +39,12 @@ export default function SpectralPage() {
     } finally {
       setIsComputing(false);
     }
-  };
+  }, []);
+
+  // Compute spectral triple on mount and when model changes
+  useEffect(() => {
+    computeModel(transitionMatrix, PRESET_MODELS.ADDENDUM_B.epsilon);
+  }, [computeModel, transitionMatrix]);
 
   const handleNodeSelect = (index: number) => {
     setSelectedNode(index);
