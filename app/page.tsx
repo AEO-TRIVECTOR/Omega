@@ -88,6 +88,12 @@ export default function Landing() {
               >
                 → Explore full consciousness modeling framework
               </a>
+              <a 
+                href="/enchc" 
+                className="text-sm text-yellow-400 hover:text-yellow-300 transition-colors underline decoration-yellow-400/30 hover:decoration-yellow-300"
+              >
+                → Explore ENCHC framework (Higher Categories)
+              </a>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="#cta" className="btn-primary">Get Started</Link>
