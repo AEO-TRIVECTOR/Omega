@@ -274,21 +274,54 @@ export default function AccretionDiskVisualization() {
         float radialBright = pow(DISK_INNER / max(r, DISK_INNER), 1.5);
         
         // Doppler effect for approaching/receding sides
-        float vOrb = 0.4 / sqrt(max(r, 0.1));
+        float vOrb = 0.5 / sqrt(max(r, 0.1));
         float orbitDirX = -pos.z / max(r, 0.001);
         float orbitDirZ = pos.x / max(r, 0.001);
         float velLen = sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
         float dopplerDot = (orbitDirX * vel.x + orbitDirZ * vel.z) / max(velLen, 0.001);
-        float doppler = clamp(1.0 + 2.0 * dopplerDot * vOrb, 0.3, 2.5);
-        doppler = doppler * doppler;
+        
+        // Doppler factor: positive = approaching (blueshift), negative = receding (redshift)
+        float dopplerFactor = dopplerDot * vOrb * 2.5;
+        
+        // Brightness boost for approaching material (relativistic beaming)
+        float dopplerBright = clamp(1.0 + dopplerFactor, 0.25, 3.0);
+        dopplerBright = dopplerBright * dopplerBright;
         
         // Combine all factors
         float density = verticalDensity * radialDensity;
-        float brightness = radialBright * doppler * (0.4 + turbulence * 0.4 + flowBright * 0.5);
+        float brightness = radialBright * dopplerBright * (0.4 + turbulence * 0.4 + flowBright * 0.5);
         
         // Color based on radius and turbulence
         float tempVar = turbulence * 0.5;
         vec3 col = diskColor(r, tempVar) * brightness * 4.0;
+        
+        // Apply relativistic color shift
+        // Blueshift: approaching material appears hotter (shift toward blue/white)
+        // Redshift: receding material appears cooler (shift toward red/orange)
+        float colorShift = clamp(dopplerFactor * 1.5, -1.0, 1.0);
+        
+        // Blueshift - boost blue and green, reduce red slightly
+        if (colorShift > 0.0) {
+          col.b = col.b + col.b * colorShift * 0.8;
+          col.g = col.g + col.g * colorShift * 0.4;
+          col = col * (1.0 + colorShift * 0.3);
+        }
+        // Redshift - boost red, reduce blue significantly
+        else {
+          float redShift = -colorShift;
+          col.r = col.r + col.r * redShift * 0.5;
+          col.g = col.g * (1.0 - redShift * 0.3);
+          col.b = col.b * (1.0 - redShift * 0.6);
+        }
+        
+        // Gravitational redshift - light loses energy escaping the gravity well
+        // Stronger effect closer to the black hole (Schwarzschild factor)
+        float gravRedshift = sqrt(1.0 - RS / max(r, RS * 1.01));
+        col = col * gravRedshift;
+        // Shift color toward red for inner disk regions
+        float gravColorShift = (1.0 - gravRedshift) * 2.0;
+        col.b = col.b * (1.0 - gravColorShift * 0.4);
+        col.g = col.g * (1.0 - gravColorShift * 0.15);
         
         return vec4(col, density);
       }
