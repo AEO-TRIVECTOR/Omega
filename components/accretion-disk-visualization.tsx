@@ -193,34 +193,20 @@ export default function AccretionDiskVisualization() {
         return fract((p3.x + p3.y) * p3.z);
       }
       
-      float noise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        // Quintic interpolation for smoother results
-        vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-        
-        float n00 = hash(i);
-        float n10 = hash(i + vec2(1.0, 0.0));
-        float n01 = hash(i + vec2(0.0, 1.0));
-        float n11 = hash(i + vec2(1.0, 1.0));
-        
-        float nx0 = n00 + (n10 - n00) * u.x;
-        float nx1 = n01 + (n11 - n01) * u.x;
-        return nx0 + (nx1 - nx0) * u.y;
-      }
-      
-      float fbm(vec2 p) {
-        float f = 0.0;
-        float amp = 0.55;
-        float freq = 1.0;
-        
-        for (int i = 0; i < 3; i++) {
-          f = f + amp * noise(p * freq);
-          freq = freq * 1.9;
-          amp = amp * 0.5;
-        }
-        
-        return f;
+      // Smooth turbulence using only sine waves - no grid artifacts
+      float smoothTurb(vec2 p, float t) {
+        float v = 0.0;
+        // Layer 1 - large scale swirls
+        v = v + sin(p.x * 1.2 + t * 0.7) * cos(p.y * 0.9 - t * 0.5) * 0.5;
+        // Layer 2 - medium detail
+        v = v + sin(p.x * 2.3 - t * 1.1 + p.y * 1.8) * 0.3;
+        v = v + cos(p.y * 2.7 + t * 0.9 - p.x * 0.6) * 0.25;
+        // Layer 3 - fine detail flowing
+        v = v + sin(p.x * 4.1 + p.y * 3.2 + t * 1.5) * 0.15;
+        v = v + cos(p.x * 3.5 - p.y * 4.0 - t * 1.3) * 0.12;
+        // Layer 4 - very fine shimmer
+        v = v + sin(p.x * 6.0 + t * 2.0) * cos(p.y * 5.5 - t * 1.8) * 0.08;
+        return v * 0.5 + 0.5;
       }
       
       vec3 diskColor(float r, float temp) {
@@ -243,79 +229,101 @@ export default function AccretionDiskVisualization() {
         return c + vec3(0.3, 0.2, 0.1) * temp;
       }
       
-      vec4 sampleDisk(vec3 pos, vec3 vel) {
+      // Volumetric disk sampling - samples density at any 3D point
+      vec4 sampleDiskVolume(vec3 pos, vec3 vel) {
         float r = sqrt(pos.x * pos.x + pos.z * pos.z);
+        float absY = abs(pos.y);
         
-        if (r < DISK_INNER || r > DISK_OUTER) {
+        // Disk thickness varies with radius - thicker at outer edge
+        float diskThickness = 0.08 + 0.12 * smoothstep(DISK_INNER, DISK_OUTER, r);
+        
+        // Smooth vertical density falloff (no hard edges)
+        float verticalDensity = exp(-absY * absY / (diskThickness * diskThickness * 2.0));
+        
+        if (r < DISK_INNER * 0.9 || r > DISK_OUTER * 1.1 || verticalDensity < 0.01) {
           return vec4(0.0);
         }
         
-        float angle = atan(pos.z, pos.x);
+        // Radial density falloff
+        float radialDensity = smoothstep(DISK_INNER * 0.9, DISK_INNER * 1.3, r) * 
+                              smoothstep(DISK_OUTER * 1.1, DISK_OUTER * 0.6, r);
         
-        // Much faster orbital rotation - inner orbits faster (Keplerian)
-        float orbSpeed = 1.0 / (r * sqrt(r));
-        float phase = angle - u_time * orbSpeed * 8.0;
+        // Time-based animation - everything flows
+        float t = u_time;
         
-        // Normalized radius for gradients
-        float rNorm = (r - DISK_INNER) / (DISK_OUTER - DISK_INNER);
+        // Orbital motion - inner regions move faster
+        float orbitalSpeed = 8.0 / (r * sqrt(r));
+        float orbitalPhase = t * orbitalSpeed;
         
-        // Dynamic turbulence UV - flows with rotation
-        vec2 diskUV = vec2(
-          phase * 1.2 + u_time * 0.5,
-          log(r + 0.5) * 2.5 - u_time * 0.2
-        );
+        // Create flowing coordinates that animate smoothly
+        float flowX = pos.x * cos(orbitalPhase) - pos.z * sin(orbitalPhase);
+        float flowZ = pos.x * sin(orbitalPhase) + pos.z * cos(orbitalPhase);
         
-        // Animated turbulence
-        float turb = fbm(diskUV) * 0.8;
-        float turb2 = fbm(diskUV * 0.5 + vec2(u_time * 0.3, 0.0)) * 0.4;
-        turb = turb + turb2;
+        // Multiple layers of smooth turbulence at different scales
+        float turb1 = smoothTurb(vec2(flowX * 0.8, flowZ * 0.8), t * 1.5);
+        float turb2 = smoothTurb(vec2(flowX * 1.5 + 5.0, flowZ * 1.2 + 3.0), t * 2.0);
+        float turb3 = smoothTurb(vec2(flowX * 0.4, flowZ * 0.5), t * 0.8);
+        float turbulence = turb1 * 0.5 + turb2 * 0.3 + turb3 * 0.2;
         
-        // Prominent spiral arms that rotate with the disk
-        float spiralPhase = phase * 2.0 + r * 2.2;
-        float spiralArm = sin(spiralPhase);
-        spiralArm = spiralArm * 0.5 + 0.5;
-        spiralArm = pow(spiralArm, 1.5) * 0.5;
+        // Flowing brightness variations
+        float flow1 = sin(flowX * 1.5 + flowZ * 0.8 + t * 2.0) * 0.5 + 0.5;
+        float flow2 = cos(flowX * 0.9 - flowZ * 1.2 - t * 1.5) * 0.5 + 0.5;
+        float flowBright = flow1 * 0.4 + flow2 * 0.3 + 0.3;
         
-        // Secondary spiral structure
-        float spiral2 = sin(phase * 4.0 - r * 1.5 + u_time * 0.3);
-        spiral2 = max(0.0, spiral2) * 0.25;
+        // Radial brightness - hotter near center
+        float radialBright = pow(DISK_INNER / max(r, DISK_INNER), 1.5);
         
-        // Bright clumps and hotspots that orbit
-        float clumpPhase = angle - u_time * 1.2 / sqrt(r);
-        float hotspot = sin(clumpPhase * 6.0 + r * 3.0) * 0.5 + 0.5;
-        hotspot = pow(hotspot, 6.0) * 0.4;
-        
-        // Flickering brightness variation
-        float flicker = sin(u_time * 3.0 + r * 5.0) * 0.1 + 1.0;
-        
-        // Radial brightness profile - hotter inner edge
-        float brightness = pow(DISK_INNER / r, 1.8);
-        float innerFade = smoothstep(DISK_INNER, DISK_INNER * 1.2, r);
-        float outerFade = smoothstep(DISK_OUTER, DISK_OUTER * 0.7, r);
-        
-        // Strong Doppler effect for visible rotation
-        float vOrb = 0.5 / sqrt(r);
-        float orbitDirX = -pos.z;
-        float orbitDirZ = pos.x;
-        float orbitLen = sqrt(orbitDirX * orbitDirX + orbitDirZ * orbitDirZ);
-        orbitDirX = orbitDirX / max(orbitLen, 0.001);
-        orbitDirZ = orbitDirZ / max(orbitLen, 0.001);
-        
+        // Doppler effect for approaching/receding sides
+        float vOrb = 0.5 / sqrt(max(r, 0.1));
+        float orbitDirX = -pos.z / max(r, 0.001);
+        float orbitDirZ = pos.x / max(r, 0.001);
         float velLen = sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
-        float velNormX = vel.x / max(velLen, 0.001);
-        float velNormZ = vel.z / max(velLen, 0.001);
+        float dopplerDot = (orbitDirX * vel.x + orbitDirZ * vel.z) / max(velLen, 0.001);
         
-        float dopplerDot = orbitDirX * velNormX + orbitDirZ * velNormZ;
-        float doppler = clamp(1.0 + 2.5 * dopplerDot * vOrb, 0.2, 3.0);
-        doppler = doppler * doppler * doppler;
+        // Doppler factor: positive = approaching (blueshift), negative = receding (redshift)
+        float dopplerFactor = dopplerDot * vOrb * 2.5;
         
-        float intensity = brightness * innerFade * outerFade * doppler * flicker;
-        intensity = intensity * (0.6 + turb + spiralArm + spiral2 + hotspot);
+        // Brightness boost for approaching material (relativistic beaming)
+        float dopplerBright = clamp(1.0 + dopplerFactor, 0.25, 3.0);
+        dopplerBright = dopplerBright * dopplerBright;
         
-        // Color shifts with temperature/activity
-        float tempVar = hotspot + turb * 0.3;
+        // Combine all factors
+        float density = verticalDensity * radialDensity;
+        float brightness = radialBright * dopplerBright * (0.4 + turbulence * 0.4 + flowBright * 0.5);
         
-        return vec4(diskColor(r, tempVar) * intensity * 3.5, 1.0);
+        // Color based on radius and turbulence
+        float tempVar = turbulence * 0.5;
+        vec3 col = diskColor(r, tempVar) * brightness * 4.0;
+        
+        // Apply relativistic color shift
+        // Blueshift: approaching material appears hotter (shift toward blue/white)
+        // Redshift: receding material appears cooler (shift toward red/orange)
+        float colorShift = clamp(dopplerFactor * 1.5, -1.0, 1.0);
+        
+        // Blueshift - boost blue and green, reduce red slightly
+        if (colorShift > 0.0) {
+          col.b = col.b + col.b * colorShift * 0.8;
+          col.g = col.g + col.g * colorShift * 0.4;
+          col = col * (1.0 + colorShift * 0.3);
+        }
+        // Redshift - boost red, reduce blue significantly
+        else {
+          float redShift = -colorShift;
+          col.r = col.r + col.r * redShift * 0.5;
+          col.g = col.g * (1.0 - redShift * 0.3);
+          col.b = col.b * (1.0 - redShift * 0.6);
+        }
+        
+        // Gravitational redshift - light loses energy escaping the gravity well
+        // Stronger effect closer to the black hole (Schwarzschild factor)
+        float gravRedshift = sqrt(1.0 - RS / max(r, RS * 1.01));
+        col = col * gravRedshift;
+        // Shift color toward red for inner disk regions
+        float gravColorShift = (1.0 - gravRedshift) * 2.0;
+        col.b = col.b * (1.0 - gravColorShift * 0.4);
+        col.g = col.g * (1.0 - gravColorShift * 0.15);
+        
+        return vec4(col, density);
       }
       
       ${
@@ -355,7 +363,7 @@ export default function AccretionDiskVisualization() {
         vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
         
         float camDist = 11.0;
-        float orbitAngle = u_time * 0.15;
+        float orbitAngle = u_time * 0.25;
         
         float cI = cos(INCLINATION);
         float sI = sin(INCLINATION);
@@ -402,8 +410,6 @@ export default function AccretionDiskVisualization() {
         
         vec3 color = vec3(0.0);
         float alpha = 0.0;
-        int diskHits = 0;
-        float prevY = posY;
         float stepSize = ADAPTIVE_STEP;
         
         for (int i = 0; i < MAX_STEPS; i++) {
@@ -444,26 +450,17 @@ export default function AccretionDiskVisualization() {
           
           stepSize = ADAPTIVE_STEP + 0.06 * smoothstep(RS * 2.0, RS * 8.0, r);
           
+          // Volumetric disk sampling at current position
+          vec4 diskSample = sampleDiskVolume(vec3(posX, posY, posZ), vec3(velX, velY, velZ));
+          if (diskSample.a > 0.01) {
+            float contribution = diskSample.a * stepSize * 8.0 * (1.0 - alpha);
+            color = color + diskSample.rgb * contribution;
+            alpha = alpha + contribution * 0.5;
+          }
+          
           float newPosX = posX + velX * stepSize;
           float newPosY = posY + velY * stepSize;
           float newPosZ = posZ + velZ * stepSize;
-          
-          if (prevY * newPosY < -0.0001 && diskHits < ${quality.diskSamples}) {
-            float t = abs(prevY) / (abs(prevY) + abs(newPosY));
-            vec3 hitPos = vec3(
-              posX + velX * stepSize * t,
-              0.0,
-              posZ + velZ * stepSize * t
-            );
-            
-            vec4 diskSample = sampleDisk(hitPos, vec3(velX, velY, velZ));
-            if (diskSample.a > 0.0) {
-              diskHits = diskHits + 1;
-              float contribution = diskSample.a * (1.0 - alpha) * 0.9;
-              color = color + diskSample.rgb * contribution;
-              alpha = alpha + contribution * 0.7;
-            }
-          }
           
           ${
             quality.jetEnabled
@@ -479,11 +476,10 @@ export default function AccretionDiskVisualization() {
           }
           
           float prDist = abs(r - RS * 1.5);
-          float prPulse = 0.8 + 0.2 * sin(u_time * 2.5 + atan(posZ, posX) * 3.0);
-          float prGlow = exp(-prDist * prDist * 120.0) * 0.2 * prPulse * (1.0 - alpha);
+          float prPulse = 0.7 + 0.3 * sin(u_time * 4.0 + atan(posZ, posX) * 4.0);
+          float prGlow = exp(-prDist * prDist * 100.0) * 0.25 * prPulse * (1.0 - alpha);
           color = color + vec3(1.0, 0.9, 0.7) * prGlow;
           
-          prevY = newPosY;
           posX = newPosX;
           posY = newPosY;
           posZ = newPosZ;
