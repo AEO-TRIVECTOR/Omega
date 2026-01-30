@@ -251,36 +251,50 @@ export default function AccretionDiskVisualization() {
         }
         
         float angle = atan(pos.z, pos.x);
-        float orbSpeed = 1.0 / sqrt(r);
-        float phase = angle - u_time * orbSpeed * 2.5;
         
-        // Normalized radius for smoother gradients
+        // Much faster orbital rotation - inner orbits faster (Keplerian)
+        float orbSpeed = 1.0 / (r * sqrt(r));
+        float phase = angle - u_time * orbSpeed * 8.0;
+        
+        // Normalized radius for gradients
         float rNorm = (r - DISK_INNER) / (DISK_OUTER - DISK_INNER);
         
-        // Low-frequency UV for smooth turbulence (reduced from 2.0 to 0.6)
+        // Dynamic turbulence UV - flows with rotation
         vec2 diskUV = vec2(
-          phase * 0.6 + u_time * 0.15,
-          log(r + 1.0) * 1.5
+          phase * 1.2 + u_time * 0.5,
+          log(r + 0.5) * 2.5 - u_time * 0.2
         );
         
-        float turb = fbm(diskUV) * 0.6;
+        // Animated turbulence
+        float turb = fbm(diskUV) * 0.8;
+        float turb2 = fbm(diskUV * 0.5 + vec2(u_time * 0.3, 0.0)) * 0.4;
+        turb = turb + turb2;
         
-        // Smooth spiral arms using low-frequency sine
-        float spiralArm = sin(phase * 3.0 + r * 1.8 - u_time * 0.8);
+        // Prominent spiral arms that rotate with the disk
+        float spiralPhase = phase * 2.0 + r * 2.2;
+        float spiralArm = sin(spiralPhase);
         spiralArm = spiralArm * 0.5 + 0.5;
-        spiralArm = smoothstep(0.2, 0.8, spiralArm) * 0.3;
+        spiralArm = pow(spiralArm, 1.5) * 0.5;
         
-        // Very subtle hotspots
-        float hotspot = sin(angle * 5.0 + u_time * 0.6 + r * 2.0) * 0.5 + 0.5;
-        hotspot = pow(hotspot, 4.0) * 0.15;
+        // Secondary spiral structure
+        float spiral2 = sin(phase * 4.0 - r * 1.5 + u_time * 0.3);
+        spiral2 = max(0.0, spiral2) * 0.25;
         
-        // Smooth radial brightness profile
-        float brightness = pow(DISK_INNER / r, 1.5);
-        float innerFade = smoothstep(DISK_INNER, DISK_INNER * 1.25, r);
-        float outerFade = smoothstep(DISK_OUTER, DISK_OUTER * 0.8, r);
+        // Bright clumps and hotspots that orbit
+        float clumpPhase = angle - u_time * 1.2 / sqrt(r);
+        float hotspot = sin(clumpPhase * 6.0 + r * 3.0) * 0.5 + 0.5;
+        hotspot = pow(hotspot, 6.0) * 0.4;
         
-        // Doppler effect
-        float vOrb = 0.4 / sqrt(r);
+        // Flickering brightness variation
+        float flicker = sin(u_time * 3.0 + r * 5.0) * 0.1 + 1.0;
+        
+        // Radial brightness profile - hotter inner edge
+        float brightness = pow(DISK_INNER / r, 1.8);
+        float innerFade = smoothstep(DISK_INNER, DISK_INNER * 1.2, r);
+        float outerFade = smoothstep(DISK_OUTER, DISK_OUTER * 0.7, r);
+        
+        // Strong Doppler effect for visible rotation
+        float vOrb = 0.5 / sqrt(r);
         float orbitDirX = -pos.z;
         float orbitDirZ = pos.x;
         float orbitLen = sqrt(orbitDirX * orbitDirX + orbitDirZ * orbitDirZ);
@@ -292,13 +306,16 @@ export default function AccretionDiskVisualization() {
         float velNormZ = vel.z / max(velLen, 0.001);
         
         float dopplerDot = orbitDirX * velNormX + orbitDirZ * velNormZ;
-        float doppler = clamp(1.0 + 2.0 * dopplerDot * vOrb, 0.3, 2.5);
+        float doppler = clamp(1.0 + 2.5 * dopplerDot * vOrb, 0.2, 3.0);
         doppler = doppler * doppler * doppler;
         
-        float intensity = brightness * innerFade * outerFade * doppler;
-        intensity = intensity * (0.75 + turb + spiralArm + hotspot);
+        float intensity = brightness * innerFade * outerFade * doppler * flicker;
+        intensity = intensity * (0.6 + turb + spiralArm + spiral2 + hotspot);
         
-        return vec4(diskColor(r, hotspot) * intensity * 3.0, 1.0);
+        // Color shifts with temperature/activity
+        float tempVar = hotspot + turb * 0.3;
+        
+        return vec4(diskColor(r, tempVar) * intensity * 3.5, 1.0);
       }
       
       ${
@@ -338,7 +355,7 @@ export default function AccretionDiskVisualization() {
         vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
         
         float camDist = 11.0;
-        float orbitAngle = u_time * 0.08;
+        float orbitAngle = u_time * 0.15;
         
         float cI = cos(INCLINATION);
         float sI = sin(INCLINATION);
@@ -462,8 +479,9 @@ export default function AccretionDiskVisualization() {
           }
           
           float prDist = abs(r - RS * 1.5);
-          float prGlow = exp(-prDist * prDist * 150.0) * 0.15 * (1.0 - alpha);
-          color = color + vec3(1.0, 0.85, 0.6) * prGlow;
+          float prPulse = 0.8 + 0.2 * sin(u_time * 2.5 + atan(posZ, posX) * 3.0);
+          float prGlow = exp(-prDist * prDist * 120.0) * 0.2 * prPulse * (1.0 - alpha);
+          color = color + vec3(1.0, 0.9, 0.7) * prGlow;
           
           prevY = newPosY;
           posX = newPosX;
