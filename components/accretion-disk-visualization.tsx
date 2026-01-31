@@ -518,14 +518,20 @@ export default function AccretionDiskVisualization() {
           float pr2Dist = abs(r - CRITICAL_B * 0.95);
           float secondaryRing = exp(-pr2Dist * pr2Dist * 400.0) * 0.4;
           
+          // === PORTAL MOMENT - slow breathing cycle for photon ring ===
+          // Creates a subtle "alive" feeling - the event horizon breathes
+          float portalCycle = sin(u_time * 0.4) * 0.5 + 0.5;  // Slow 15s cycle
+          float portalIntensity = 0.85 + 0.25 * portalCycle;  // 0.85 to 1.1 intensity
+          
           // Subtle lensing shimmer (spacetime breathing)
-          float shimmer = 1.0 + 0.02 * sin(u_time * 3.0 + r * 8.0);
+          float shimmer = 1.0 + 0.025 * sin(u_time * 2.5 + r * 6.0);
           
-          float prPulse = 0.75 + 0.25 * sin(u_time * 3.5 + atan(posZ, posX) * 3.0);
-          float prGlow = (primaryRing + secondaryRing) * 0.35 * prPulse * shimmer * (1.0 - alpha);
+          float prPulse = 0.7 + 0.3 * sin(u_time * 3.0 + atan(posZ, posX) * 3.0);
+          float prGlow = (primaryRing + secondaryRing) * 0.4 * prPulse * shimmer * portalIntensity * (1.0 - alpha);
           
-          // Photon ring is hotter/whiter than disk
-          color = color + vec3(1.2, 1.1, 1.0) * prGlow;
+          // Photon ring with subtle blue-white tint during portal peaks
+          vec3 ringColor = mix(vec3(1.15, 1.05, 0.95), vec3(1.1, 1.15, 1.25), portalCycle * 0.3);
+          color = color + ringColor * prGlow;
           
           posX = newPosX;
           posY = newPosY;
@@ -542,17 +548,29 @@ export default function AccretionDiskVisualization() {
           float cpZ = camZ + rdZ * rayClosest;
           float closestR = sqrt(cpX * cpX + cpY * cpY + cpZ * cpZ);
           
+          // Portal moment sync for arcs
+          float arcPortal = sin(u_time * 0.4) * 0.5 + 0.5;
+          float arcIntensity = 0.8 + 0.3 * arcPortal;
+          
           // Einstein ring at ~2.6 Rs
           float erDist = closestR - RS * 2.6;
           float einsteinRing = exp(-erDist * erDist * 80.0);
-          color = color + vec3(1.0, 0.85, 0.6) * einsteinRing * 0.35 * (1.0 - alpha * 0.7);
+          color = color + vec3(1.0, 0.88, 0.65) * einsteinRing * 0.35 * arcIntensity * (1.0 - alpha * 0.7);
           
           // Secondary lensed arc (underside of disk bent upward)
-          // This creates the characteristic "mirrored" appearance
+          // Faint mirror arc above/below disk - appears during portal peaks
           float secondaryArcDist = abs(closestR - RS * 3.5);
-          float secondaryArc = exp(-secondaryArcDist * secondaryArcDist * 50.0) * 0.2;
-          // Tint with disk color, slightly dimmer
-          vec3 arcColor = vec3(1.1, 0.75, 0.4) * secondaryArc * (1.0 - alpha * 0.8);
+          float secondaryArc = exp(-secondaryArcDist * secondaryArcDist * 45.0) * 0.25 * arcIntensity;
+          
+          // Upper arc (above disk plane)
+          float upperArcY = cpY;
+          float upperWeight = smoothstep(-0.5, 0.5, upperArcY) * 0.6;
+          
+          // Lower arc (below disk plane)
+          float lowerWeight = smoothstep(0.5, -0.5, upperArcY) * 0.6;
+          
+          // Combined arc with warm disk-like color
+          vec3 arcColor = vec3(1.05, 0.72, 0.38) * secondaryArc * (upperWeight + lowerWeight) * (1.0 - alpha * 0.8);
           color = color + arcColor;
         }
         
