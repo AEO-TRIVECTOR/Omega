@@ -273,19 +273,32 @@ export default function AccretionDiskVisualization() {
         // Radial brightness - hotter near center
         float radialBright = pow(DISK_INNER / max(r, DISK_INNER), 1.5);
         
-        // Doppler effect for approaching/receding sides
-        float vOrb = 0.5 / sqrt(max(r, 0.1));
+        // === PROPER RELATIVISTIC DOPPLER FROM SCHWARZSCHILD PHYSICS ===
+        
+        // Orbital velocity: v = sqrt(M/ρ) in geometric units, clamp < 0.7c for stability
+        float vOrb = min(sqrt(RS * 0.5 / max(r, DISK_INNER)), 0.7);
+        
+        // Tangential velocity direction (Keplerian orbit)
         float orbitDirX = -pos.z / max(r, 0.001);
         float orbitDirZ = pos.x / max(r, 0.001);
+        
+        // Line of sight direction (from emitter to camera)
         float velLen = sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
-        float dopplerDot = (orbitDirX * vel.x + orbitDirZ * vel.z) / max(velLen, 0.001);
+        float losX = -vel.x / max(velLen, 0.001);
+        float losZ = -vel.z / max(velLen, 0.001);
         
-        // Doppler factor: positive = approaching (blueshift), negative = receding (redshift)
-        float dopplerFactor = dopplerDot * vOrb * 2.5;
+        // cos(θ) = velocity · line_of_sight
+        float cosTheta = orbitDirX * losX + orbitDirZ * losZ;
         
-        // Brightness boost for approaching material (relativistic beaming)
-        float dopplerBright = clamp(1.0 + dopplerFactor, 0.25, 3.0);
-        dopplerBright = dopplerBright * dopplerBright;
+        // Lorentz factor: γ = 1/sqrt(1 - v²)
+        float gamma = 1.0 / sqrt(max(1.0 - vOrb * vOrb, 0.01));
+        
+        // Relativistic Doppler factor: δ = 1 / [γ(1 - v·cos(θ))]
+        float delta = 1.0 / max(gamma * (1.0 - vOrb * cosTheta), 0.1);
+        
+        // Intensity scales as δ³ (relativistic beaming)
+        float dopplerBright = delta * delta * delta;
+        dopplerBright = clamp(dopplerBright, 0.15, 6.0);
         
         // Combine all factors
         float density = verticalDensity * radialDensity;
@@ -293,37 +306,36 @@ export default function AccretionDiskVisualization() {
         
         // Color based on radius and turbulence
         float tempVar = turbulence * 0.5;
-        vec3 col = diskColor(r, tempVar) * brightness * 4.0;
+        vec3 col = diskColor(r, tempVar) * brightness * 3.5;
         
-        // Apply relativistic color shift
-        // Blueshift: approaching material appears hotter (shift toward blue/white)
-        // Redshift: receding material appears cooler (shift toward red/orange)
-        float colorShift = clamp(dopplerFactor * 2.0, -1.0, 1.0);
+        // === RELATIVISTIC COLOR SHIFT ===
+        // δ > 1 = approaching (blueshift), δ < 1 = receding (redshift)
+        float colorShift = clamp((delta - 1.0) * 1.5, -1.0, 1.0);
         
-        // Blueshift - strong shift toward blue/cyan/white for approaching material
+        // Blueshift - shift toward blue/cyan/white
         if (colorShift > 0.0) {
-          float blueBoost = colorShift * colorShift; // Quadratic for stronger effect
-          col.b = col.b + col.b * blueBoost * 2.0 + colorShift * 0.4;
-          col.g = col.g + col.g * colorShift * 1.2;
-          col.r = col.r * (1.0 - colorShift * 0.15); // Slightly reduce red
-          col = col * (1.0 + colorShift * 0.5); // Brighter overall
+          float blueBoost = colorShift * colorShift;
+          col.b = col.b * (1.0 + blueBoost * 3.0) + colorShift * 0.5;
+          col.g = col.g * (1.0 + colorShift * 1.5);
+          col.r = col.r * (1.0 - colorShift * 0.2);
         }
-        // Redshift - boost red, reduce blue significantly
+        // Redshift - shift toward red/orange
         else {
           float redShift = -colorShift;
-          col.r = col.r + col.r * redShift * 0.6;
-          col.g = col.g * (1.0 - redShift * 0.35);
-          col.b = col.b * (1.0 - redShift * 0.7);
+          col.r = col.r * (1.0 + redShift * 0.8);
+          col.g = col.g * (1.0 - redShift * 0.4);
+          col.b = col.b * (1.0 - redShift * 0.8);
         }
         
-        // Gravitational redshift - light loses energy escaping the gravity well
-        // Stronger effect closer to the black hole (Schwarzschild factor)
-        float gravRedshift = sqrt(1.0 - RS / max(r, RS * 1.01));
+        // === GRAVITATIONAL REDSHIFT (Schwarzschild) ===
+        // g(ρ) = sqrt(1 - 2M/ρ) = sqrt(1 - Rs/ρ)
+        float gravRedshift = sqrt(max(1.0 - RS / max(r, RS * 1.01), 0.01));
         col = col * gravRedshift;
-        // Shift color toward red for inner disk regions
-        float gravColorShift = (1.0 - gravRedshift) * 2.0;
-        col.b = col.b * (1.0 - gravColorShift * 0.4);
-        col.g = col.g * (1.0 - gravColorShift * 0.15);
+        
+        // Additional color shift from gravitational redshift
+        float gravColorShift = (1.0 - gravRedshift) * 3.0;
+        col.b = col.b * (1.0 - gravColorShift * 0.5);
+        col.g = col.g * (1.0 - gravColorShift * 0.2);
         
         return vec4(col, density);
       }
