@@ -181,7 +181,10 @@ export default function AccretionDiskVisualization() {
       
       const float PI = 3.14159265359;
       const float RS = 0.6;
-      const float DISK_INNER = 1.2;
+      const float M = RS * 0.5;  // Mass parameter (Rs = 2M)
+      const float CRITICAL_B = 3.0 * sqrt(3.0) * M;  // Critical impact parameter
+      const float ISCO = 6.0 * M;  // Innermost stable circular orbit
+      const float DISK_INNER = ISCO * 1.05;  // Disk starts just outside ISCO
       const float DISK_OUTER = 6.0;
       const int MAX_STEPS = ${quality.maxSteps};
       const float INCLINATION = 0.1045;
@@ -210,23 +213,33 @@ export default function AccretionDiskVisualization() {
       }
       
       vec3 diskColor(float r, float temp) {
-        float t = clamp((r - DISK_INNER) / (DISK_OUTER - DISK_INNER), 0.0, 1.0);
+        // Temperature profile: T(r) ∝ r^(-3/4) (standard thin disk)
+        float tempProfile = pow(DISK_INNER / max(r, DISK_INNER), 0.75);
+        float t = 1.0 - tempProfile;  // 0 = hot (inner), 1 = cool (outer)
+        t = clamp(t, 0.0, 1.0);
         
-        vec3 hot = vec3(1.4, 1.4, 1.3);
-        vec3 warm = vec3(1.3, 1.0, 0.5);
-        vec3 mid = vec3(1.2, 0.65, 0.2);
-        vec3 cool = vec3(0.9, 0.3, 0.1);
+        // Color palette: white → pale yellow → gold → orange → amber → red-brown
+        vec3 white = vec3(1.5, 1.5, 1.45);
+        vec3 paleYellow = vec3(1.4, 1.35, 1.0);
+        vec3 gold = vec3(1.3, 1.0, 0.5);
+        vec3 orange = vec3(1.2, 0.65, 0.2);
+        vec3 amber = vec3(1.0, 0.45, 0.12);
+        vec3 redBrown = vec3(0.7, 0.25, 0.08);
         
         vec3 c;
-        if (t < 0.33) {
-          c = mix(hot, warm, t * 3.0);
-        } else if (t < 0.66) {
-          c = mix(warm, mid, (t - 0.33) * 3.0);
+        if (t < 0.2) {
+          c = mix(white, paleYellow, t * 5.0);
+        } else if (t < 0.4) {
+          c = mix(paleYellow, gold, (t - 0.2) * 5.0);
+        } else if (t < 0.6) {
+          c = mix(gold, orange, (t - 0.4) * 5.0);
+        } else if (t < 0.8) {
+          c = mix(orange, amber, (t - 0.6) * 5.0);
         } else {
-          c = mix(mid, cool, (t - 0.66) * 3.0);
+          c = mix(amber, redBrown, (t - 0.8) * 5.0);
         }
         
-        return c + vec3(0.3, 0.2, 0.1) * temp;
+        return c + vec3(0.25, 0.15, 0.05) * temp;
       }
       
       // Volumetric disk sampling - samples density at any 3D point
@@ -269,6 +282,13 @@ export default function AccretionDiskVisualization() {
         float flow1 = sin(flowX * 1.5 + flowZ * 0.8 + t * 2.0) * 0.5 + 0.5;
         float flow2 = cos(flowX * 0.9 - flowZ * 1.2 - t * 1.5) * 0.5 + 0.5;
         float flowBright = flow1 * 0.4 + flow2 * 0.3 + 0.3;
+        
+        // === SPIRAL DENSITY WAVES (very subtle, m=2 mode) ===
+        // S(r,φ,t) = 1 + A*cos(m*φ - ωt + k*ln(r))
+        float angle = atan(pos.z, pos.x);
+        float spiralPhase = 2.0 * angle - t * 0.8 + 2.5 * log(max(r, 0.1));
+        float spiralWave = 1.0 + 0.06 * cos(spiralPhase);
+        flowBright = flowBright * spiralWave;
         
         // Radial brightness - hotter near center
         float radialBright = pow(DISK_INNER / max(r, DISK_INNER), 1.5);
@@ -489,10 +509,23 @@ export default function AccretionDiskVisualization() {
               : ""
           }
           
-          float prDist = abs(r - RS * 1.5);
-          float prPulse = 0.7 + 0.3 * sin(u_time * 4.0 + atan(posZ, posX) * 4.0);
-          float prGlow = exp(-prDist * prDist * 100.0) * 0.25 * prPulse * (1.0 - alpha);
-          color = color + vec3(1.0, 0.9, 0.7) * prGlow;
+          // === PHOTON RING at critical impact parameter b_c = 3√3 M ===
+          // Primary photon ring - thin, sharp, hotter than disk
+          float prDist = abs(r - CRITICAL_B);
+          float primaryRing = exp(-prDist * prDist * 200.0);
+          
+          // Secondary photon ring (light that orbited once more)
+          float pr2Dist = abs(r - CRITICAL_B * 0.95);
+          float secondaryRing = exp(-pr2Dist * pr2Dist * 400.0) * 0.4;
+          
+          // Subtle lensing shimmer (spacetime breathing)
+          float shimmer = 1.0 + 0.02 * sin(u_time * 3.0 + r * 8.0);
+          
+          float prPulse = 0.75 + 0.25 * sin(u_time * 3.5 + atan(posZ, posX) * 3.0);
+          float prGlow = (primaryRing + secondaryRing) * 0.35 * prPulse * shimmer * (1.0 - alpha);
+          
+          // Photon ring is hotter/whiter than disk
+          color = color + vec3(1.2, 1.1, 1.0) * prGlow;
           
           posX = newPosX;
           posY = newPosY;
@@ -501,16 +534,34 @@ export default function AccretionDiskVisualization() {
           if (alpha > 0.95) break;
         }
         
+        // === EINSTEIN RING and SECONDARY LENSED ARCS ===
         float rayClosest = -camX * rdX - camY * rdY - camZ * rdZ;
         if (rayClosest > 0.0) {
           float cpX = camX + rdX * rayClosest;
           float cpY = camY + rdY * rayClosest;
           float cpZ = camZ + rdZ * rayClosest;
           float closestR = sqrt(cpX * cpX + cpY * cpY + cpZ * cpZ);
+          
+          // Einstein ring at ~2.6 Rs
           float erDist = closestR - RS * 2.6;
-          float einsteinRing = exp(-erDist * erDist * 70.0);
-          color = color + vec3(1.0, 0.8, 0.5) * einsteinRing * 0.4 * (1.0 - alpha * 0.7);
+          float einsteinRing = exp(-erDist * erDist * 80.0);
+          color = color + vec3(1.0, 0.85, 0.6) * einsteinRing * 0.35 * (1.0 - alpha * 0.7);
+          
+          // Secondary lensed arc (underside of disk bent upward)
+          // This creates the characteristic "mirrored" appearance
+          float secondaryArcDist = abs(closestR - RS * 3.5);
+          float secondaryArc = exp(-secondaryArcDist * secondaryArcDist * 50.0) * 0.2;
+          // Tint with disk color, slightly dimmer
+          vec3 arcColor = vec3(1.1, 0.75, 0.4) * secondaryArc * (1.0 - alpha * 0.8);
+          color = color + arcColor;
         }
+        
+        // === ISCO GAP indicator - subtle dark ring between photon sphere and disk ===
+        float screenR = length(uv);
+        float iscoScreenR = 0.08;  // Approximate screen position of ISCO
+        float gapDist = abs(screenR - iscoScreenR);
+        float iscoGap = 1.0 - exp(-gapDist * gapDist * 800.0) * 0.15;
+        color = color * iscoGap;
         
         ${
           quality.bloomEnabled
