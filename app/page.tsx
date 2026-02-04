@@ -21,33 +21,32 @@ export default function Home() {
           </h1>
         </div>
         
-        {/* Subtitle positioned at ~28% from top - just above the disk's upper glow */}
-        <div className="absolute top-[22%] md:top-[24%] left-0 right-0 text-center">
-          <p className="text-xs sm:text-sm md:text-base font-normal tracking-[0.45em] uppercase text-[#7CB9E8] drop-shadow-[0_0_20px_rgba(124,185,232,0.6)]">
+        {/* Subtitle positioned closer to title - around 17-18% from top */}
+        <div className="absolute top-[16%] md:top-[17%] lg:top-[18%] left-0 right-0 text-center">
+          <p className="text-[10px] sm:text-xs md:text-sm font-normal tracking-[0.4em] uppercase text-[#7CB9E8]">
             The Event Horizon
           </p>
         </div>
         
-        {/* Bottom section - Enter CTA positioned low in dark zone below disk */}
-        <div className="absolute bottom-[8%] md:bottom-[10%] left-0 right-0 flex flex-col items-center gap-4">
-          {/* Enter text link - bolder blue */}
+        {/* Enter CTA positioned in center over black hole - around 58-62% from top */}
+        <div className="absolute top-[58%] md:top-[60%] left-0 right-0 flex flex-col items-center gap-3">
+          {/* Enter text link - larger, prominent */}
           <Link 
             href="#enter"
-            className="group relative text-base md:text-lg font-normal tracking-[0.5em] uppercase text-[#5DADE2] hover:text-[#85C1E9] transition-all duration-500"
+            className="group relative text-lg sm:text-xl md:text-2xl font-normal tracking-[0.5em] uppercase text-[#5DADE2] hover:text-[#85C1E9] transition-all duration-500"
           >
-            <span className="relative z-10">Enter</span>
-            {/* Animated underline on hover */}
-            <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#5DADE2] group-hover:w-full transition-all duration-500" />
+            Enter
           </Link>
           
-          {/* Down arrow indicator */}
+          {/* Down arrow indicator - thin line */}
           <svg 
-            className="w-4 h-4 text-[#5DADE2]/60"
+            className="w-3 h-6 md:w-4 md:h-8 text-[#5DADE2]/70 mt-1"
             fill="none" 
             stroke="currentColor" 
-            viewBox="0 0 24 24"
+            viewBox="0 0 24 48"
+            strokeWidth={1}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 0v44m0 0l-6-6m6 6l6-6" />
           </svg>
         </div>
       </div>
