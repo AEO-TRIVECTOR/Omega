@@ -251,24 +251,32 @@ export default function AccretionDiskVisualization() {
         // Time-based animation - everything flows
         float t = u_time;
         
-        // Orbital motion - inner regions move faster
-        float orbitalSpeed = 8.0 / (r * sqrt(r));
+        // Orbital motion - inner regions move MUCH faster (Keplerian)
+        // Increased base speed for more visible rotation
+        float orbitalSpeed = 15.0 / (r * sqrt(r));
         float orbitalPhase = t * orbitalSpeed;
         
         // Create flowing coordinates that animate smoothly
         float flowX = pos.x * cos(orbitalPhase) - pos.z * sin(orbitalPhase);
         float flowZ = pos.x * sin(orbitalPhase) + pos.z * cos(orbitalPhase);
         
+        // Motion streaks - elongated in direction of rotation
+        float angle = atan(pos.z, pos.x);
+        float streakPhase = angle * 6.0 - t * orbitalSpeed * 0.5;
+        float motionStreak = sin(streakPhase) * 0.5 + 0.5;
+        motionStreak = pow(motionStreak, 0.7) * 0.3;
+        
         // Multiple layers of smooth turbulence at different scales
-        float turb1 = smoothTurb(vec2(flowX * 0.8, flowZ * 0.8), t * 1.5);
-        float turb2 = smoothTurb(vec2(flowX * 1.5 + 5.0, flowZ * 1.2 + 3.0), t * 2.0);
-        float turb3 = smoothTurb(vec2(flowX * 0.4, flowZ * 0.5), t * 0.8);
+        float turb1 = smoothTurb(vec2(flowX * 0.8, flowZ * 0.8), t * 2.5);
+        float turb2 = smoothTurb(vec2(flowX * 1.5 + 5.0, flowZ * 1.2 + 3.0), t * 3.5);
+        float turb3 = smoothTurb(vec2(flowX * 0.4, flowZ * 0.5), t * 1.5);
         float turbulence = turb1 * 0.5 + turb2 * 0.3 + turb3 * 0.2;
         
-        // Flowing brightness variations
-        float flow1 = sin(flowX * 1.5 + flowZ * 0.8 + t * 2.0) * 0.5 + 0.5;
-        float flow2 = cos(flowX * 0.9 - flowZ * 1.2 - t * 1.5) * 0.5 + 0.5;
-        float flowBright = flow1 * 0.4 + flow2 * 0.3 + 0.3;
+        // Fast flowing brightness variations - more dynamic
+        float flow1 = sin(flowX * 2.0 + flowZ * 1.2 + t * 4.0) * 0.5 + 0.5;
+        float flow2 = cos(flowX * 1.3 - flowZ * 1.8 - t * 3.0) * 0.5 + 0.5;
+        float flow3 = sin(angle * 3.0 - t * orbitalSpeed * 0.3) * 0.5 + 0.5;
+        float flowBright = flow1 * 0.3 + flow2 * 0.25 + flow3 * 0.2 + motionStreak + 0.25;
         
         // Radial brightness - hotter near center
         float radialBright = pow(DISK_INNER / max(r, DISK_INNER), 1.5);
