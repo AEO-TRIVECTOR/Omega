@@ -21,13 +21,6 @@ export default function Home() {
           </h1>
         </div>
         
-        {/* Subtitle positioned at ~15-17% from top - in dark zone below title */}
-        <div className="absolute top-[14%] md:top-[15%] lg:top-[16%] left-0 right-0 text-center">
-          <p className="text-[10px] sm:text-xs md:text-sm font-normal tracking-[0.4em] uppercase text-[#7CB9E8]">
-            The Event Horizon
-          </p>
-        </div>
-        
         {/* Enter CTA positioned in center over black hole - around 58-62% from top */}
         <div className="absolute top-[58%] md:top-[60%] left-0 right-0 flex flex-col items-center gap-3">
           {/* Enter text link - larger, prominent */}
