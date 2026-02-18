@@ -1,24 +1,77 @@
 'use client'
 
 // Optimized black hole visualization with React Three Fiber
-// Unified metric state system with mobile performance tuning
-// Based on Perplexity code review recommendations
+// Self-contained implementation without external component dependencies
+// Mobile-optimized with SSR-safe metric state
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useMemo, useRef, useState, useEffect } from 'react'
 import * as THREE from 'three'
-import { useMetricState } from '@/hooks/useMetricState'
 import {
   EffectComposer,
   Bloom,
-  Noise,
   Vignette,
   ToneMapping,
 } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 
 // ============================================================
-// CAMERA DRIFT - Metric-synchronized Lissajous motion
+// SSR-SAFE METRIC STATE HOOK
+// ============================================================
+
+function useMetricState() {
+  const [isClient, setIsClient] = useState(false)
+
+  const stateRef = useRef({
+    metric: 0,
+    orbital: 0,
+    breathing: 0,
+    turbulenceSeeds: {
+      seed1: 0,
+      seed2: 0,
+      seed3: 0,
+    },
+  })
+
+  useEffect(() => {
+    setIsClient(true)
+    stateRef.current.turbulenceSeeds = {
+      seed1: Math.random() * 1000,
+      seed2: Math.random() * 1000,
+      seed3: Math.random() * 1000,
+    }
+  }, [])
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    const s = stateRef.current
+    s.metric = (t / 180) % 1
+    s.orbital = (t / 60) % 1
+    s.breathing = (t / 45) % 1
+  })
+
+  if (!isClient) {
+    return {
+      state: {
+        metric: 0,
+        orbital: 0,
+        breathing: 0,
+        turbulenceSeeds: {
+          seed1: 0,
+          seed2: 0,
+          seed3: 0,
+        },
+      },
+    }
+  }
+
+  return {
+    state: stateRef.current,
+  }
+}
+
+// ============================================================
+// CAMERA DRIFT
 // ============================================================
 
 function CameraDrift({ metricState }: { metricState: any }) {
@@ -29,15 +82,11 @@ function CameraDrift({ metricState }: { metricState: any }) {
       initialPos.current = camera.position.clone()
     }
 
-    // Metric-synchronized Lissajous drift
-    const orbitalPhase = metricState.orbital // 60s period
-    const breathingPhase = metricState.breathing // 45s period
+    const orbitalPhase = metricState.orbital
+    const breathingPhase = metricState.breathing
     
-    // Subliminal amplitude, synchronized with metric evolution
     camera.position.x = initialPos.current.x + Math.sin(orbitalPhase * Math.PI * 2) * 0.03
     camera.position.y = initialPos.current.y + Math.cos(breathingPhase * Math.PI * 2) * 0.02
-
-    // Very subtle roll synchronized with metric
     camera.rotation.z = Math.sin(metricState.metric * Math.PI * 2 * 0.5) * 0.002
 
     camera.lookAt(0, 0, 0)
@@ -47,10 +96,10 @@ function CameraDrift({ metricState }: { metricState: any }) {
 }
 
 // ============================================================
-// STAR FIELD - Simple GPU-based stars with twinkle
+// STAR FIELD
 // ============================================================
 
-function StarField({ visible = true }: { visible?: boolean }) {
+function StarField() {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
 
@@ -83,8 +132,6 @@ function StarField({ visible = true }: { visible?: boolean }) {
       pointsRef.current.rotation.y = clock.elapsedTime * 0.01
     }
   })
-
-  if (!visible) return null
 
   return (
     <points ref={pointsRef}>
@@ -148,7 +195,7 @@ function StarField({ visible = true }: { visible?: boolean }) {
 }
 
 // ============================================================
-// PHOTON RING - Simplified unified version
+// PHOTON RING
 // ============================================================
 
 function PhotonRing({
@@ -156,31 +203,25 @@ function PhotonRing({
   ringRadius,
   rotation,
   intensity = 1.0,
-  visible = true,
 }: {
   metricState: any
   ringRadius: number
   rotation: [number, number, number]
   intensity?: number
-  visible?: boolean
 }) {
   const meshRef = useRef<THREE.Mesh>(null)
 
   useFrame(() => {
     if (!meshRef.current) return
     
-    // Breathing effect synchronized with metric state
     const breathScale = 1.0 + Math.sin(metricState.breathing * Math.PI * 2) * 0.02
     meshRef.current.scale.setScalar(breathScale)
     
-    // Subtle intensity pulsing
     const material = meshRef.current.material as THREE.ShaderMaterial
     if (material.uniforms) {
       material.uniforms.uIntensity.value = intensity * (0.9 + Math.sin(metricState.metric * Math.PI * 2) * 0.1)
     }
   })
-
-  if (!visible) return null
 
   return (
     <mesh ref={meshRef} rotation={rotation}>
@@ -201,7 +242,6 @@ function PhotonRing({
           varying vec2 vUv;
           
           void main() {
-            // Doppler-like brightness variation
             float brightness = 0.5 + 0.5 * sin(vUv.x * 6.28);
             vec3 color = vec3(1.0, 0.95, 0.85) * uIntensity * brightness;
             float alpha = smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
@@ -217,17 +257,15 @@ function PhotonRing({
 }
 
 // ============================================================
-// SCENE - Main scene with unified metric state
+// SCENE
 // ============================================================
 
-function Scene({ phase = 2 }: { phase?: number }) {
+function Scene() {
   const { state: metricState } = useMetricState()
   const { viewport, camera } = useThree()
   
-  // Detect mobile for performance tuning
-  const isMobile = viewport.width < 8 // R3F viewport units
+  const isMobile = viewport.width < 8
 
-  // Responsive ring radius
   const ringRadius = useMemo(() => {
     const vFOV = (camera.fov * Math.PI) / 180
     const viewportHeight = 2 * Math.tan(vFOV / 2) * Math.abs(camera.position.z)
@@ -238,41 +276,31 @@ function Scene({ phase = 2 }: { phase?: number }) {
 
   return (
     <>
-      {/* Camera drift - metric synchronized */}
       <CameraDrift metricState={metricState} />
+      <StarField />
 
-      {/* Star field */}
-      <StarField visible={phase >= 1} />
-
-      {/* Photon rings group - positioned down for "standing at rim" effect */}
       <group position={[0, -1.2, 0]}>
-        {/* Primary photon ring (n=0) */}
         <PhotonRing
           metricState={metricState}
           ringRadius={ringRadius}
           rotation={[tiltRad, 0, 0]}
           intensity={1.2}
-          visible={phase >= 2}
         />
         
-        {/* Secondary ghost ring (n=1) */}
         <PhotonRing
           metricState={metricState}
           ringRadius={ringRadius * 0.985}
           rotation={[tiltRad, 0, 0]}
           intensity={0.3}
-          visible={phase >= 2}
         />
       </group>
 
-      {/* Post-processing - mobile-optimized */}
       <EffectComposer disableNormalPass>
         <Bloom 
           intensity={isMobile ? 0.6 : 1.0} 
           luminanceThreshold={0.2}
           luminanceSmoothing={0.9}
         />
-        {!isMobile && <Noise opacity={0.15} />}
         <Vignette eskil={false} offset={0.2} darkness={0.8} />
         <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       </EffectComposer>
@@ -281,13 +309,13 @@ function Scene({ phase = 2 }: { phase?: number }) {
 }
 
 // ============================================================
-// MAIN COMPONENT - Canvas wrapper with mobile DPR tuning
+// MAIN COMPONENT
 // ============================================================
 
 export default function AccretionDiskVisualization() {
   return (
     <Canvas
-      dpr={[1, 1.5]} // Mobile-optimized DPR
+      dpr={[1, 1.5]}
       gl={{
         antialias: true,
         alpha: true,
@@ -296,7 +324,7 @@ export default function AccretionDiskVisualization() {
       camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 0, 8] }}
     >
       <Suspense fallback={null}>
-        <Scene phase={2} />
+        <Scene />
       </Suspense>
     </Canvas>
   )
