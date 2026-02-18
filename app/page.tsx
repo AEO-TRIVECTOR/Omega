@@ -1,7 +1,22 @@
-import AccretionDiskVisualization from "@/components/accretion-disk-visualization"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 
-const VERSION = "3.0";
+const VERSION = "3.0"
+
+// Client-only visualization with SSR disabled
+const AccretionDiskVisualization = dynamic(
+  () => import("@/components/accretion-disk-visualization"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-black">
+        <span className="text-xs text-white/40 tracking-[0.3em] uppercase font-mono">
+          Initializing spacetime manifold…
+        </span>
+      </div>
+    ),
+  },
+)
 
 export default function Home() {
   return (
