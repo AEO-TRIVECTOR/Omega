@@ -1,21 +1,21 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Cormorant_Garamond } from 'next/font/google'
+import { Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-const _cormorant = Cormorant_Garamond({ 
+// Force dynamic rendering for entire app (required for R3F)
+export const dynamic = 'force-dynamic'
+
+const cormorant = Cormorant_Garamond({ 
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
   variable: "--font-serif"
 });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'AEO Trivector - Attractor Architecture',
+  description: 'Geometric foundations for interpretable AI',
   icons: {
     icon: [
       {
@@ -42,7 +42,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+      </head>
+      <body className={`${cormorant.variable} font-sans antialiased`}>
         {children}
         <Analytics />
       </body>

@@ -1,13 +1,12 @@
 "use client"
 
-// Force redeploy to update production domain
-import dynamic from "next/dynamic"
+import dynamicImport from "next/dynamic"
 import Link from "next/link"
 
 const VERSION = "3.0"
 
 // Client-only visualization with SSR disabled
-const AccretionDiskVisualization = dynamic(
+const AccretionDiskVisualization = dynamicImport(
   () => import("@/components/accretion-disk-visualization"),
   {
     ssr: false,
