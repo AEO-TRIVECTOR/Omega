@@ -10,11 +10,9 @@
 //   "react-dom": "^18.2.0"
 
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useMetricState } from '@/hooks/useMetricState';
-import { PhotonRing as UnifiedPhotonRing } from './PhotonRing';
-import { CrossGlow } from './CrossGlow';
 import {
   EffectComposer,
   Bloom,
@@ -1062,34 +1060,18 @@ function Scene({ phase, proximityDim = 0 }) {
       <group position={[0, -1.2, 0]}>
         {/* Unified Photon Rings with shared metric state */}
         
-        {/* n=0: Primary photon ring */}
-        <UnifiedPhotonRing 
-          metricState={metricState}
-          ringRadius={ringRadius}
-          rotation={[(tiltDeg * Math.PI) / 180, 0, 0]}
-          order={0}
-          intensity={1.2}
-          thickness={0.12}
+        {/* n=1: Primary photon ring (Doppler + Kerr asymmetry) */}
+        <PhotonRing
           visible={phase >= 2}
+          ringRadius={ringRadius}
+          tiltDeg={tiltDeg}
         />
         
-        {/* n=1: Secondary ghost ring (exponentially dimmer) */}
-        <UnifiedPhotonRing 
-          metricState={metricState}
+        {/* n=2: Secondary ghost ring (exponentially dimmer) */}
+        <PhotonRingN2
+          visible={phase >= 2}
           ringRadius={ringRadius * 0.985}
-          rotation={[(tiltDeg * Math.PI) / 180, 0, 0]}
-          order={1}
-          intensity={0.3}
-          thickness={0.08}
-          visible={phase >= 2}
-        />
-        
-        {/* CrossGlow: Inter-ring atmospheric coupling */}
-        <CrossGlow 
-          metricState={metricState}
-          ringRadius={ringRadius}
-          rotation={[(tiltDeg * Math.PI) / 180, 0, 0]}
-          visible={phase >= 2}
+          tiltDeg={tiltDeg}
         />
 
         {/* ── Horizon rim effect: subtle compression at edge ── */}
